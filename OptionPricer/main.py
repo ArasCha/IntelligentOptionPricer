@@ -9,7 +9,8 @@ if __name__ == "__main__":
                     rate= 0.1,
                     strike= 100,
                     underlying_price= 150,
-                    volatility= 0.2)
+                    volatility= 0.2,
+                    dividend= 0.04)
 
     pricer = BlackScholesPricer(instrument)
     price = pricer.calculate()

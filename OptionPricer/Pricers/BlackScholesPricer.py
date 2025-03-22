@@ -25,6 +25,7 @@ class BlackScholesPricer:
         self.S = instrument.underlying_price
         self.K = instrument.strike
         self.r = instrument.rate
+        self.q = instrument.dividend
         self.sigma = instrument.volatility
         self.T = (instrument.maturity - calculation_date).days / CONVENTION_YEAR_FRACTION # time to maturity as a year fraction
         self.d1 = (log(self.S/self.K) + self.r*self.T + 0.5*self.T*self.sigma**2) / (self.sigma*sqrt(self.T))
@@ -37,7 +38,7 @@ class BlackScholesPricer:
         """
         
         if isinstance(self.instrument, Call):
-            return self.S*norm.cdf(self.d1) - self.K * exp(-self.r*self.T) * norm.cdf(self.d2)
+            return self.S * exp(-self.q*self.T) * norm.cdf(self.d1) - self.K * exp(-self.r*self.T) * norm.cdf(self.d2)
 
         elif isinstance(self.instrument, Put):
-            return -self.S*norm.cdf(-self.d1) + self.K * exp(-self.r*self.T) * norm.cdf(-self.d2)
+            return -self.S * exp(-self.q*self.T) * norm.cdf(-self.d1) + self.K * exp(-self.r*self.T) * norm.cdf(-self.d2)
