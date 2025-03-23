@@ -20,3 +20,4 @@ if __name__ == "__main__":
     nb_samples = 2**18 # power of 2 for Sobol sequence in qmc
     print("Monte Carlo calculate", pricer_monte_carlo.calculate(nb_samples))
     print("Monte Carlo calculate_qmc", pricer_monte_carlo.calculate_qmc(nb_samples))
+    print("Monte Carlo calculate_antithetc", pricer_monte_carlo.calculate_antithetic(nb_samples))
