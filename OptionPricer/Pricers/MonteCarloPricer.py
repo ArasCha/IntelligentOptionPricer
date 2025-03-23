@@ -4,6 +4,9 @@ from Pricers.Pricer import Pricer
 
 from scipy.stats import norm
 from scipy.stats.qmc import Sobol
+import time
+from concurrent.futures import ProcessPoolExecutor, as_completed
+
 
 
 
@@ -54,3 +57,36 @@ class MonteCarloPricer(Pricer):
         payoff = ( self.payoff(S_T1) + self.payoff(S_T2) )/2
 
         return np.mean(payoff * np.exp(-self.r * self.T))
+
+
+    def calculate_lazy(self, nb_samples: int, batch_size: int = 100_000) -> float:
+        """
+        Monte Carlo price of the option with a lazy random generator
+        Uses batches of gaussian random variables
+        """
+        drift = (self.r - self.q - 0.5 * self.sigma**2) * self.T
+
+        def _normal_generator(batch_size: int):
+            while True:
+                yield np.random.normal(size=batch_size)
+
+        gen = _normal_generator(batch_size) # lazy generator
+
+        sum_payoff = 0.0
+        count_draws = 0
+
+        while count_draws < nb_samples:
+
+            G = next(gen) # batch of random gaussian variables
+
+            needed = nb_samples - count_draws # how many more samples we need to reach nb_samples
+
+            if len(G) > needed: # If the batch from the generator is larger than the amount we still need
+                G = G[:needed] # truncate the batch to exactly 'needed' samples
+
+            S_T = self.S * np.exp(drift + self.sigma * np.sqrt(self.T) * G)
+
+            sum_payoff += self.payoff(S_T).sum()
+            count_draws += len(G)
+
+        return (sum_payoff / nb_samples) * np.exp(-self.r * self.T)
