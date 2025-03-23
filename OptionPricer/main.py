@@ -1,7 +1,7 @@
 from Pricers.BlackScholesPricer import BlackScholesPricer
 from Pricers.MonteCarloPricer import MonteCarloPricer
 from Option import Call, Put
-from VolatilitySurface import build_iv_surface
+from VolatilitySurface import build_iv_surface, plot_iv_surface
 import yfinance as yf
 
 
@@ -29,4 +29,4 @@ if __name__ == "__main__":
 
     ticker = yf.Ticker("AAPL") # Apple stock
     iv_df = build_iv_surface(ticker)
-    print(iv_df)
+    plot_iv_surface(iv_df)
