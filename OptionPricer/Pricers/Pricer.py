@@ -28,8 +28,6 @@ class Pricer(abc.ABC):
         self.q = instrument.dividend
         self.sigma = instrument.volatility
         self.T = (instrument.maturity - calculation_date).days / CONVENTION_YEAR_FRACTION # time to maturity as a year fraction
-        self.d1 = (np.log(self.S/self.K) + self.r*self.T + 0.5*self.T*self.sigma**2) / (self.sigma*np.sqrt(self.T))
-        self.d2 = self.d1 - self.sigma*np.sqrt(self.T)
 
         if isinstance(instrument, Call):
             self.payoff = lambda S_T: np.maximum(S_T - self.K, 0)
