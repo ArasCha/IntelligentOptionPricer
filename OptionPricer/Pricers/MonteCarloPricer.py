@@ -90,3 +90,28 @@ class MonteCarloPricer(Pricer):
             count_draws += len(G)
 
         return (sum_payoff / nb_samples) * np.exp(-self.r * self.T)
+
+
+    def benchmark(self, nb_samples: int):
+        """
+        Time the execution of Monte Carlo pricing methods
+        """
+
+        results = {}
+        methods = ["calculate", "calculate_antithetic", "calculate_lazy", "calculate_qmc"]
+
+        for method in methods:
+            durations = []
+            prices = []
+            for _ in range(1000):
+                start = time.time()
+                price = getattr(self, method)(nb_samples)
+                prices.append(price)
+                durations.append(time.time() - start)
+
+            results[method] = {
+                "time": round(float(np.mean(durations)), 6),
+                "price": round(float(np.mean(prices)), 6)
+            }
+
+        return results

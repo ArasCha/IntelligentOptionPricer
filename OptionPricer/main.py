@@ -22,3 +22,5 @@ if __name__ == "__main__":
     print("Monte Carlo calculate_qmc", pricer_monte_carlo.calculate_qmc(nb_samples))
     print("Monte Carlo calculate_antithetc", pricer_monte_carlo.calculate_antithetic(nb_samples))
     print("Monte Carlo calculate_lazy", pricer_monte_carlo.calculate_lazy(nb_samples))
+
+    print(pricer_monte_carlo.benchmark(10000))
