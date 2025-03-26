@@ -2,6 +2,7 @@ from Pricers.BlackScholesPricer import BlackScholesPricer
 from Pricers.MonteCarloPricer import MonteCarloPricer
 from Option import Call, Put
 from VolatilitySurface import ImpliedVolSurfaceBuilder
+from RiskFreeCurve.CurveInterface import CurveInterface
 
 
 
@@ -26,4 +27,15 @@ if __name__ == "__main__":
 
     # print(pricer_monte_carlo.benchmark(10000))
 
-    ImpliedVolSurfaceBuilder("AAPL").plot_surface()
+    # ImpliedVolSurfaceBuilder("AAPL").plot_surface()
+
+
+
+    tickers = ["^IRX", "^FVX", "^TNX", "^TYX"]  # 3 mois, 5 ans, 10, 30
+    start_date = "2023-01-01"
+    end_date = "2023-03-01"
+
+    curve = CurveInterface(tickers, start_date, end_date)
+    for plot in [0.25, 1, 2, 5, 10, 20, 30]:
+        discount_factor, zero_rate = curve.infer(plot)
+        print(f"Maturity {plot:5.2f} yrs | DF = {discount_factor:6.4f} | ZeroRate cont. = {zero_rate * 100:4.2f}%")
