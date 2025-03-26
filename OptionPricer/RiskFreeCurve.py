@@ -42,8 +42,7 @@ class MarketDataFetcher:
         Extracts the latest interest rate points (in percentage) and converts them to decimal.
         :return: (maturities, rates) as (np.array, np.array).
         """
-        if self._data is None:
-            raise ValueError("You must call fetch_data() first.")
+        assert self._data is not None, "fetch_data() method must be first."
 
         # Select the DataFrame with closing prices
         adj_close = self._data['Close'].copy()
@@ -99,8 +98,7 @@ class RateInterpolator:
         :param grid_points: List or array of maturities for which we want to calculate the rate.
         :return: Numpy array of interpolated rates.
         """
-        if self.spline is None:
-            raise ValueError("Spline not defined, call fit_cubic_spline() first.")
+        assert self.spline is not None, "Spline not defined, call fit_cubic_spline() first."
         return self.spline(grid_points)
     
 
@@ -202,7 +200,6 @@ print(rate_interpolator.spline)
 
 grid = np.linspace(0.25, 30, 100) # try from 0.25 to 30
 interp_rates = rate_interpolator.interpolate(grid)
-print(interp_rates)
 # rate_interpolator.plot_interpolation(grid, interp_rates)
 
 curve_builder = CurveBuilder()
