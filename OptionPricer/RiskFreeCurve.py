@@ -229,7 +229,6 @@ maturities, rates = data_fetcher.get_latest_rates()
 
 rate_interpolator = RateInterpolator(maturities, rates)
 rate_interpolator.fit_cubic_spline()
-print(rate_interpolator.spline)
 
 grid = np.linspace(0.25, 30, 100) # try from 0.25 to 30
 interp_rates = rate_interpolator.interpolate(grid)
@@ -238,4 +237,8 @@ interp_rates = rate_interpolator.interpolate(grid)
 curve_builder = CurveBuilder()
 
 curve_builder.build_curve(maturities, rates)
-print(curve_builder.curve)
+
+for plot in [0.25, 1, 2, 5, 10, 20, 30]:
+    discount_factor = curve_builder.get_discount_factor(plot)
+    zero_rate = curve_builder.get_zero_rate(plot, compounding=ql.Continuous)
+    print(f"Maturity {plot:5.2f} yrs | DF = {discount_factor:6.4f} | ZeroRate cont. = {zero_rate * 100:4.2f}%")
