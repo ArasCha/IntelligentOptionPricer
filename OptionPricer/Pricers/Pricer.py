@@ -5,7 +5,6 @@ from datetime import datetime
 import abc
 
 
-
 CONVENTION_YEAR_FRACTION = 365
         
 
@@ -38,4 +37,10 @@ class Pricer(abc.ABC):
     def calculate(self) -> float:
         """
         Calculate the price of the option
+        """
+
+    @abc.abstractmethod
+    def benchmark(self, nb_samples: int):
+        """
+        Benchmark the performance of the `calculate` method of the pricer.
         """
