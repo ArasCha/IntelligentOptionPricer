@@ -1,7 +1,7 @@
 from Pricers.BlackScholesPricer import BlackScholesPricer
 from Pricers.MonteCarloPricer import MonteCarloPricer
 from Option import Call, Put
-from VolatilitySurface import VolatilitySurface
+from VolatilitySurface import ImpliedVolSurfaceBuilder
 
 
 
@@ -26,4 +26,4 @@ if __name__ == "__main__":
 
     # print(pricer_monte_carlo.benchmark(10000))
 
-    VolatilitySurface("AAPL").plot_iv_surface()
+    ImpliedVolSurfaceBuilder("AAPL").plot_surface()
