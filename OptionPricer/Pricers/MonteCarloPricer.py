@@ -1,18 +1,53 @@
+import abc
 from Option import Call, Put
 import numpy as np
 from Pricers.Pricer import Pricer
 
+
 from scipy.stats import norm
 from scipy.stats.qmc import Sobol
 import time
-from concurrent.futures import ProcessPoolExecutor, as_completed
-
-
 
 
 class MonteCarloPricer(Pricer):
     """
-    Calculator of the today price of an european option with Monte Carlo
+    Abstract Monte Carlo Pricer
+    """
+
+    @abc.abstractmethod
+    def calculate(self) -> float:
+        """
+        Calculate the price of the option with abstract Monte Carlo
+        """
+
+    def benchmark(self, nb_samples: int):
+        """
+        Benchmark the performance of the `calculate` method of the pricer.
+        Runs the `calculate` method 1000 times.
+
+        Args:
+            nb_samples (int): The number of samples to pass to the `calculate` function.
+
+        Returns:
+            tuple: A tuple containing:
+                - The average execution time (in seconds), rounded to 6 decimal places.
+                - The average calculated price, rounded to 6 decimal places.
+        """
+        nb_iterations = 1000
+        durations = np.empty(nb_iterations)
+        prices = np.empty(nb_iterations)
+
+        for i in range(nb_iterations):
+            start = time.perf_counter()
+            prices[i] = self.calculate(nb_samples)
+            durations[i] = time.perf_counter() - start
+
+        return (round(float(np.mean(durations)), 6), round(float(np.mean(prices)), 6))
+
+
+class MonteCarloPricerClassic(MonteCarloPricer):
+    """
+    Calculator of the today price of an european option with classic Monte Carlo
     """
 
     def calculate(self, nb_samples: int) -> float:
@@ -26,7 +61,12 @@ class MonteCarloPricer(Pricer):
         return np.mean(self.payoff(S_T) * np.exp(-self.r * self.T))
 
 
-    def calculate_qmc(self, nb_samples: int) -> float:
+class MonteCarloPricerQMC(MonteCarloPricer):
+    """
+    Calculator of the price of the option with Quasi-Monte Carlo with a Sobol sequence
+    """
+    
+    def calculate(self, nb_samples: int) -> float:
         """
         Calculate the price of the option with Quasi-Monte Carlo with a Sobol sequence
         """
@@ -44,7 +84,12 @@ class MonteCarloPricer(Pricer):
         return np.mean(self.payoff(S_T) * np.exp(-self.r * self.T))
 
 
-    def calculate_antithetic(self, nb_samples: int) -> float:
+class MonteCarloPricerAntithetic(MonteCarloPricer):
+    """
+    Calculator of the price of the option with antithetic variables
+    """
+    
+    def calculate(self, nb_samples: int) -> float:
         """
         Calculate the price of the option with antithetic variables
         """
@@ -59,7 +104,13 @@ class MonteCarloPricer(Pricer):
         return np.mean(payoff * np.exp(-self.r * self.T))
 
 
-    def calculate_lazy(self, nb_samples: int, batch_size: int = 100_000) -> float:
+class MonteCarloPricerLazy(MonteCarloPricer):
+    """
+    Monte Carlo price of the option with a lazy random generator
+    Uses batches of gaussian random variables
+    """
+
+    def calculate(self, nb_samples: int, batch_size: int = 100_000) -> float:
         """
         Monte Carlo price of the option with a lazy random generator
         Uses batches of gaussian random variables
@@ -90,28 +141,3 @@ class MonteCarloPricer(Pricer):
             count_draws += len(G)
 
         return (sum_payoff / nb_samples) * np.exp(-self.r * self.T)
-
-
-    def benchmark(self, nb_samples: int):
-        """
-        Time the execution of Monte Carlo pricing methods
-        """
-
-        results = {}
-        methods = ["calculate", "calculate_antithetic", "calculate_lazy", "calculate_qmc"]
-
-        for method in methods:
-            durations = []
-            prices = []
-            for _ in range(1000):
-                start = time.time()
-                price = getattr(self, method)(nb_samples)
-                prices.append(price)
-                durations.append(time.time() - start)
-
-            results[method] = {
-                "time": round(float(np.mean(durations)), 6),
-                "price": round(float(np.mean(prices)), 6)
-            }
-
-        return results
