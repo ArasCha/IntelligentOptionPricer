@@ -1,6 +1,8 @@
 
 import yfinance as yf
 import numpy as np
+from scipy.interpolate import interp1d
+
 
 class MarketDataFetcher:
     """
@@ -61,11 +63,42 @@ class MarketDataFetcher:
         return self._last_date
 
 
+
+class RateInterpolator:
+    """
+    Handles interpolation of zero-coupon rates using a cubic spline (or other).
+    """
+
+    def __init__(self, maturities, rates):
+        """
+        :param maturities: Maturities in years (numpy array or list).
+        :param rates: Zero-coupon rates in decimal (numpy array or list).
+        """
+        self.maturities = maturities
+        self.rates = rates
+        self.spline = None
+
+    def fit_cubic_spline(self):
+        """
+        Builds a cubic spline (interp1d) based on the (maturities, rates) points.
+        """
+        self.spline = interp1d(
+            self.maturities, 
+            self.rates, 
+            kind='cubic', 
+            fill_value="extrapolate"
+        )
+
+
+
+
 tickers = ["^IRX", "^FVX", "^TNX", "^TYX"]  # 3 mois, 5 ans, 10, 30
 start_date = "2023-01-01"
 end_date = "2023-03-01"
 
-datafetcher = MarketDataFetcher(tickers, start_date, end_date)
-print(datafetcher.get_latest_rates())
-print(datafetcher.last_date)
+data_fetcher = MarketDataFetcher(tickers, start_date, end_date)
+maturities, rates = data_fetcher.get_latest_rates() 
 
+rate_interpolator = RateInterpolator(maturities, rates)
+rate_interpolator.fit_cubic_spline()
+print(rate_interpolator.spline) # ok pas à None
