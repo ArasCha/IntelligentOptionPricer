@@ -3,6 +3,8 @@ import yfinance as yf
 import numpy as np
 from scipy.interpolate import interp1d
 import plotly.graph_objects as go
+import QuantLib as ql
+
 
 
 class MarketDataFetcher:
@@ -118,6 +120,72 @@ class RateInterpolator:
         ).show()
 
 
+class CurveBuilder:
+    """
+    Builds a QuantLib discount curve from zero-coupon instruments
+    (or equivalents) and provides methods to compute discount factors and zero rates.
+    """
+
+    def __init__(self, calendar=None, day_count=None, business_convention=None):
+        """
+        :param calendar: Calendar (QuantLib Calendar), e.g. ql.UnitedStates().
+        :param day_count: Day count convention (ql.DayCounter), e.g. ql.Actual365Fixed().
+        :param business_convention: Business convention (ql.BusinessDayConvention),
+                                    e.g. ql.Following or ql.ModifiedFollowing.
+        """
+        self.calendar = calendar if calendar else ql.UnitedStates(ql.UnitedStates.GovernmentBond)
+        self.day_count = day_count if day_count else ql.Actual365Fixed()
+        self.business_convention = business_convention if business_convention else ql.Following
+        self.curve = None
+
+        today = ql.Date().todaysDate() # set the evaluation date in QuantLib
+        ql.Settings.instance().evaluationDate = today
+
+    def build_curve(self, maturities, rates):
+        """
+        Builds a 'PiecewiseCubicZero' curve in QuantLib,
+        by manually creating FixedRateBond-style helpers.
+
+        :param maturities: List/array of maturities in years.
+        :param rates:      List/array of zero-coupon rates in decimal,
+                           in the same order as maturities.
+        """
+        instruments = []
+        today = ql.Settings.instance().evaluationDate
+
+        for mat, rate in zip(maturities, rates):
+            tenor_in_days = int(mat * 365)
+            maturity_date = today + tenor_in_days
+
+            # Create a Schedule
+            schedule = ql.MakeSchedule(
+                effectiveDate=today,
+                terminationDate=maturity_date,
+                calendar=self.calendar,
+                tenor=ql.Period(int(mat * 12), ql.Months),
+                convention=self.business_convention
+            )
+
+            # Create a FixedRateBondHelper with coupon = rate
+            bond_helper = ql.FixedRateBondHelper(
+                ql.QuoteHandle(ql.SimpleQuote(100.0)),  # theoretical price
+                1,                   # settlement days
+                100.0,               # nominal
+                schedule,
+                [rate],              # list of coupons
+                self.day_count,
+                self.business_convention,
+                100.0,               # redemption
+                today
+            )
+            instruments.append(bond_helper)
+
+        # Build the curve
+        self.curve = ql.PiecewiseCubicZero(
+            today,
+            instruments,
+            self.day_count
+        )
 
 
 tickers = ["^IRX", "^FVX", "^TNX", "^TYX"]  # 3 mois, 5 ans, 10, 30
@@ -125,6 +193,7 @@ start_date = "2023-01-01"
 end_date = "2023-03-01"
 
 data_fetcher = MarketDataFetcher(tickers, start_date, end_date)
+data_fetcher.fetch_data()
 maturities, rates = data_fetcher.get_latest_rates() 
 
 rate_interpolator = RateInterpolator(maturities, rates)
@@ -134,4 +203,9 @@ print(rate_interpolator.spline)
 grid = np.linspace(0.25, 30, 100) # try from 0.25 to 30
 interp_rates = rate_interpolator.interpolate(grid)
 print(interp_rates)
-rate_interpolator.plot_interpolation(grid, interp_rates)
+# rate_interpolator.plot_interpolation(grid, interp_rates)
+
+curve_builder = CurveBuilder()
+
+curve_builder.build_curve(maturities, rates)
+print(curve_builder.curve)
