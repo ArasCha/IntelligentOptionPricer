@@ -185,6 +185,39 @@ class CurveBuilder:
             self.day_count
         )
 
+    def get_discount_factor(self, T: float):
+        """
+        Returns the discount factor for a given maturity T.
+        :param T: Maturity in years (float).
+        :return: float discount factor
+        """
+        assert self.curve is not None, "The QuantLib curve is not yet built"
+
+        today = ql.Settings.instance().evaluationDate
+        date_target = today + int(T * 365)
+        return self.curve.discount(date_target)
+
+    def get_zero_rate(self, T: float, compounding=ql.Compounded, freq=ql.Annual):
+        """
+        Returns the zero rate for a given maturity T, based on a compounding
+        method and frequency.
+        :param T:   Maturity in years (float).
+        :param compounding:  Compounding type (ql.Compounding).
+        :param freq:         Frequency (ql.Frequency).
+        :return: float, the zero rate in decimal.
+        """
+        assert self.curve is not None, "The QuantLib curve is not yet built"
+
+        today = ql.Settings.instance().evaluationDate
+        date_target = today + int(T * 365)
+        zero_rate = self.curve.zeroRate(
+            date_target, 
+            self.day_count,
+            compounding, 
+            freq
+        )
+        return zero_rate.rate()
+
 
 tickers = ["^IRX", "^FVX", "^TNX", "^TYX"]  # 3 mois, 5 ans, 10, 30
 start_date = "2023-01-01"
