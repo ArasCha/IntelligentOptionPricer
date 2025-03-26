@@ -2,6 +2,7 @@
 import yfinance as yf
 import numpy as np
 from scipy.interpolate import interp1d
+import plotly.graph_objects as go
 
 
 class MarketDataFetcher:
@@ -89,6 +90,33 @@ class RateInterpolator:
             fill_value="extrapolate"
         )
 
+    
+    def interpolate(self, grid_points):
+        """
+        Returns interpolated rates for a set of specified points.
+        :param grid_points: List or array of maturities for which we want to calculate the rate.
+        :return: Numpy array of interpolated rates.
+        """
+        if self.spline is None:
+            raise ValueError("Spline not defined, call fit_cubic_spline() first.")
+        return self.spline(grid_points)
+    
+
+    def plot_interpolation(self, grid_points, interpolated_rates):
+        """
+        Displays the interpolation curve vs. original points using Plotly.
+        :param grid_points: List or array of maturities for which the rate has been calculated.
+        :param interpolated_rates: Interpolated rates computed by the spline.
+        """
+        go.Figure([
+            go.Scatter(x=self.maturities, y=self.rates, mode='markers', name="Observed Rates"),
+            go.Scatter(x=grid_points, y=interpolated_rates, mode='lines', name="Cubic Spline")
+        ]).update_layout(
+            title="Cubic Spline Interpolation of Zero-Coupon Rates (example)",
+            xaxis_title="Maturity (in years)",
+            yaxis_title="Annual Rate (decimal)"
+        ).show()
+
 
 
 
@@ -101,4 +129,9 @@ maturities, rates = data_fetcher.get_latest_rates()
 
 rate_interpolator = RateInterpolator(maturities, rates)
 rate_interpolator.fit_cubic_spline()
-print(rate_interpolator.spline) # ok pas à None
+print(rate_interpolator.spline)
+
+grid = np.linspace(0.25, 30, 100) # try from 0.25 to 30
+interp_rates = rate_interpolator.interpolate(grid)
+print(interp_rates)
+rate_interpolator.plot_interpolation(grid, interp_rates)
