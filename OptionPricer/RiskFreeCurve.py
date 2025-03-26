@@ -30,7 +30,7 @@ class MarketDataFetcher:
         Downloads market data for the selected tickers,
         stores the associated DataFrame in self._data and records the last available date.
         """
-        self._data = yf.download(self.tickers, start=self.start_date, end=self.end_date)
+        self._data = yf.download(self.tickers, start=self.start_date, end=self.end_date, progress=False)
         if self._data is not None and not self._data.empty:
             self._last_date = self._data.index[-1]
         else:
